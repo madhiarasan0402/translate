@@ -13,9 +13,16 @@ import scipy.io.wavfile as wavfile
 from transformers import AutoProcessor, BarkModel
 
 # Paths
-ffmpeg_path = r'C:\ffmpeg\ffmpeg-8.0.1-essentials_build\bin'
-if ffmpeg_path not in os.environ["PATH"]:
-    os.environ["PATH"] += os.pathsep + ffmpeg_path
+# Paths
+if os.name == 'nt':
+    ffmpeg_dir = r'C:\ffmpeg\ffmpeg-8.0.1-essentials_build\bin'
+    if ffmpeg_dir not in os.environ["PATH"]:
+        os.environ["PATH"] += os.pathsep + ffmpeg_dir
+    ffmpeg_cmd = os.path.join(ffmpeg_dir, 'ffmpeg.exe')
+    ffprobe_cmd = os.path.join(ffmpeg_dir, 'ffprobe.exe')
+else:
+    ffmpeg_cmd = 'ffmpeg'
+    ffprobe_cmd = 'ffprobe'
 
 # Model Cache
 _whisper_model = None
@@ -101,7 +108,7 @@ def download_video_and_audio(youtube_url: str, output_dir: str = "downloads"):
     
     # Extract audio for transcription
     cmd = [
-        os.path.join(ffmpeg_path, 'ffmpeg.exe'),
+        ffmpeg_cmd,
         '-y', '-i', video_path,
         '-vn', '-acodec', 'libmp3lame', '-ar', '16000',
         audio_path
@@ -170,7 +177,7 @@ async def text_to_speech_edge(text: str, lang: str, gender: str = "female", outp
 
 def get_audio_duration(file_path):
     cmd = [
-        os.path.join(ffmpeg_path, 'ffprobe.exe'),
+        ffprobe_cmd,
         '-v', 'error', '-show_entries', 'format=duration',
         '-of', 'default=noprint_wrappers=1:nokey=1', file_path
     ]
@@ -252,7 +259,7 @@ async def mix_audio_and_video_segmented(video_path, original_audio, segments, ta
     
     amix_filter = f"[1:a]volume=0.1[bg_low];{';'.join(audio_filters)};[bg_low]{mix_inputs}amix=inputs={processed_segments + 1}:duration=first,volume=2.0[outa]"
     
-    cmd = [os.path.join(ffmpeg_path, 'ffmpeg.exe'), '-y']
+    cmd = [ffmpeg_cmd, '-y']
     for f in input_files:
         cmd.extend(['-i', f])
         
@@ -284,7 +291,7 @@ def mix_audio_and_video(video_path, original_audio, translated_audio, output_dir
     output_video_path = os.path.join(output_dir, output_filename)
     
     cmd = [
-        os.path.join(ffmpeg_path, 'ffmpeg.exe'),
+        ffmpeg_cmd,
         '-y',
         '-i', video_path, 
         '-i', original_audio, 
@@ -322,7 +329,7 @@ async def run_pipeline(youtube_url: str, target_lang: str, voice_id: str = "fema
         unique_id = uuid.uuid4()
         audio_file = os.path.join("downloads", f"{unique_id}_audio.mp3")
         cmd = [
-            os.path.join(ffmpeg_path, 'ffmpeg.exe'),
+            ffmpeg_cmd,
             '-y', '-i', video_file,
             '-vn', '-acodec', 'libmp3lame', '-ar', '16000',
             audio_file
