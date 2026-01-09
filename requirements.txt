@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+gunicorn
+jinja2
+python-multipart
+python-dotenv
+mysql-connector-python
+psycopg2-binary
+yt-dlp
+openai-whisper
+torch
+numpy
+edge-tts
+moviepy
+requests
+deep-translator
