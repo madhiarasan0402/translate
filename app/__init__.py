@@ -1,1 +1,1 @@
-# Making app a package
+from .main import app
